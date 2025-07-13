@@ -4,10 +4,55 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Mr-Bellali/home_storage/internal/models"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func SetupAuthRoutes(g *echo.Group) {
+	g.POST("/auth/register", func(c echo.Context) error {
+		var data map[string]string
+
+		if err := c.Bind(&data); err != nil {
+			log.Println("Error binding data:", err)
+			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid data"})
+		}
+
+		name := data["name"]
+		email := data["email"]
+		password := data["password"]
+
+		if name == "" || email == "" || password == "" {
+			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Name, email and password are required"})
+		}
+
+		// Check if user already exists
+		var existingUser models.User
+		if err := models.DB.Where("email = ?", email).First(&existingUser).Error; err == nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"message": "User already exists"})
+		}
+
+		// Hash password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Error hashing password"})
+		}
+
+		// Create user
+		user := models.User{
+			Name:     name,
+			Email:    email,
+			Password: string(hashedPassword),
+		}
+
+		if err := models.DB.Create(&user).Error; err != nil {
+			log.Println("Error creating user:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Error creating user"})
+		}
+
+		return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
+	})
+
 	g.POST("/auth/login", func(c echo.Context) error {
 		var data map[string]string
 
@@ -23,9 +68,33 @@ func SetupAuthRoutes(g *echo.Group) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Email and password are required"})
 		}
 
-		
+		// Find user by email
+		var user models.User
+		if err := models.DB.Where("email = ?", email).First(&user).Error; err != nil {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"message": "Invalid credentials"})
+		}
 
-		return c.JSON(200, map[string]string{"message": "Login endpoint"})
+		// Verify password
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"message": "Invalid credentials"})
+		}
+
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message": "Login successful",
+			"user": map[string]interface{}{
+				"id":    user.ID,
+				"name":  user.Name,
+				"email": user.Email,
+			},
+		})
 	})
-	// e.POST("/change-password/:id", handlers.ChangePasswordHandler, middlewares.AuthMiddleware())
+
+	g.GET("/users", func(c echo.Context) error {
+		var users []models.User
+		if err := models.DB.Find(&users).Error; err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Error fetching users"})
+		}
+
+		return c.JSON(http.StatusOK, users)
+	})
 }

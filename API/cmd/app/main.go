@@ -2,18 +2,22 @@ package main
 
 import (
 	"github.com/Mr-Bellali/home_storage/internal/handlers"
+	"github.com/Mr-Bellali/home_storage/internal/models"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
+	// Initialize database
+	models.InitDB()
+
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"}, 
+		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{
-			echo.HeaderOrigin, 
-			echo.HeaderContentType, 
-			echo.HeaderAccept, 
+			echo.HeaderOrigin,
+			echo.HeaderContentType,
+			echo.HeaderAccept,
 			echo.HeaderAuthorization,
 		},
 	}))
