@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: db
+    environment:
+      POSTGRES_DB: home_storage
+      POSTGRES_USER: home_storage
+    env_file:
+      - .env.postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U home_storage"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  api:
+    container_name: "api"
+    build: ./api
+    env_file:
+      - .env.api
+    ports:
+      - "5050:5050"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  default:
+
+volumes:
+  postgres_data:
