@@ -28,7 +28,8 @@ func main() {
 		return c.JSON(200, map[string]string{"message": "API is running"})
 	})
 	// Setup routes
-	handlers.SetupUsersRoutes(api)
 	handlers.SetupAuthRoutes(api)
+	handlers.SetupUsersRoutes(api)
+	handlers.SetupWorkspacesRoutes(api)
 	e.Logger.Fatal(e.Start("0.0.0.0:5050"))
 }

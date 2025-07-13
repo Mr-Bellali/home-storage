@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Mr-Bellali/home_storage/internal/models"
+	"github.com/Mr-Bellali/home_storage/pkg"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -79,13 +80,19 @@ func SetupAuthRoutes(g *echo.Group) {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"message": "Invalid credentials"})
 		}
 
+		t, err := pkg.GenerateJWT(user.Name, user.Email, user.ID)
+		if err != nil {
+			log.Println("JWT generation failed:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to generate token"})
+		}
+
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			"message": "Login successful",
 			"user": map[string]interface{}{
 				"id":    user.ID,
 				"name":  user.Name,
 				"email": user.Email,
 			},
+			"token": t,
 		})
 	})
 }

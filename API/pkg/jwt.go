@@ -12,11 +12,11 @@ var JWTSecret = []byte("secret")
 type JwtCustomClaims struct {
 	Name    string `json:"name"`
 	Email   string `json:"email"`
-	UserID  string `json:"id"`
+	UserID  uint `json:"id"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(name, email, userID string, isAdmin bool) (string, error) {
+func GenerateJWT(name, email string, userID uint) (string, error) {
 	claims := &JwtCustomClaims{
 		Name:    name,
 		Email:   email,
