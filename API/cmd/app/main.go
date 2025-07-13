@@ -27,6 +27,8 @@ func main() {
 	api.GET("/", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"message": "API is running"})
 	})
+	// Setup routes
+	handlers.SetupUsersRoutes(api)
 	handlers.SetupAuthRoutes(api)
 	e.Logger.Fatal(e.Start("0.0.0.0:5050"))
 }

@@ -29,7 +29,7 @@ func SetupAuthRoutes(g *echo.Group) {
 		// Check if user already exists
 		var existingUser models.User
 		if err := models.DB.Where("email = ?", email).First(&existingUser).Error; err == nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"message": "User already exists"})
+			return c.JSON(http.StatusConflict, map[string]string{"message": "User already exists"})
 		}
 
 		// Hash password
@@ -87,14 +87,5 @@ func SetupAuthRoutes(g *echo.Group) {
 				"email": user.Email,
 			},
 		})
-	})
-
-	g.GET("/users", func(c echo.Context) error {
-		var users []models.User
-		if err := models.DB.Find(&users).Error; err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Error fetching users"})
-		}
-
-		return c.JSON(http.StatusOK, users)
 	})
 }
