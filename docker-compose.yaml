@@ -1,7 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:0.8.0-pg16
-    container_name: db
+    container_name: home_storage_db
     environment:
       POSTGRES_DB: home_storage
       POSTGRES_USER: home_storage
