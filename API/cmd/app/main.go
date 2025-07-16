@@ -31,5 +31,6 @@ func main() {
 	handlers.SetupAuthRoutes(api)
 	handlers.SetupUsersRoutes(api)
 	handlers.SetupWorkspacesRoutes(api)
+	e.Use(middleware.Logger())
 	e.Logger.Fatal(e.Start("0.0.0.0:5050"))
 }
