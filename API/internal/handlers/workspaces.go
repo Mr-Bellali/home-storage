@@ -25,47 +25,43 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		description := data["description"]
 		workspaceType := data["type"]
 
-		fmt.Printf("Creating workspace - Name: %s, Description: %s, Type: %s", name, description, workspaceType)
+		fmt.Printf("Creating workspace - Name: %s, Description: %s, Type: %s\n", name, description, workspaceType)
 
 		if name == "" || description == "" || workspaceType == "" {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Name, description and workspace type are required!"})
 		}
 
-		// Check if private or public workspace
+		// Check if workspaceType is valid
 		if workspaceType != "public" && workspaceType != "personal" {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Workspace type must be public or personal!"})
 		}
 
-		// Create a folder (relative to current directory or project root)
-		// Get current working directory
-		cwd, err := os.Getwd()
+		// Use the Docker-mounted path to your Mac Desktop
+		desktopPath := "/host-desktop/workspaces"
+
+		// Ensure the workspaces folder exists
+		err := os.MkdirAll(desktopPath, os.ModePerm)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": fmt.Sprintf("Error getting working directory: %s", err)})
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"message": fmt.Sprintf("Error creating workspaces directory on Desktop: %s", err),
+			})
 		}
 
-		// Create workspaces directory in the project root
-		workspacesDir := filepath.Join(cwd, "workspaces")
-		err = os.MkdirAll(workspacesDir, os.ModePerm)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": fmt.Sprintf("Error creating workspaces directory: %s", err)})
-		}
-
-		// Create the specific workspace directory
-		dir := filepath.Join(workspacesDir, name)
+		// Create the specific workspace directory inside it
+		dir := filepath.Join(desktopPath, name)
 		err = os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": fmt.Sprintf("Error creating workspace directory: %s", err)})
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"message": fmt.Sprintf("Error creating workspace directory: %s", err),
+			})
 		}
 
-		fmt.Printf("Created workspace directory: %s", dir)
+		fmt.Printf("Created workspace directory: %s\n", dir)
 
-		// Store the metadata on the database
-		// Return the response
-
+		// Respond
 		return c.JSON(http.StatusOK, map[string]string{
 			"message": fmt.Sprintf("Workspace created successfully: %s", dir),
 		})
 	},
 		middlewares.AuthMiddleware())
-
 }
