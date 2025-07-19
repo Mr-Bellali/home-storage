@@ -25,6 +25,9 @@ services:
       - .env.api
     ports:
       - "5050:5050"
+    volumes:
+      - ./api:/app       
+      - /app/tmp 
     depends_on:
       postgres:
         condition: service_healthy

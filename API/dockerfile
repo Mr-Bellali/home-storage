@@ -1,5 +1,7 @@
 FROM golang:1.24.3
 
+RUN go install github.com/air-verse/air@latest
+
 WORKDIR /app
 
 COPY go.mod go.sum ./
@@ -9,4 +11,4 @@ COPY . .
 
 RUN go build -o ./bin/main ./cmd/app
 
-ENTRYPOINT ["./bin/main"]
+ENTRYPOINT ["/go/bin/air"]

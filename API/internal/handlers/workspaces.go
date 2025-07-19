@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,7 +16,7 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		var data map[string]string
 
 		if err := c.Bind(&data); err != nil {
-			log.Println("Error binding data:", err)
+			fmt.Println("Error binding data:", err)
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid data"})
 		}
 
@@ -26,7 +25,7 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		description := data["description"]
 		workspaceType := data["type"]
 
-		log.Printf("Creating workspace - Name: %s, Description: %s, Type: %s", name, description, workspaceType)
+		fmt.Printf("Creating workspace - Name: %s, Description: %s, Type: %s", name, description, workspaceType)
 
 		if name == "" || description == "" || workspaceType == "" {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Name, description and workspace type are required!"})
@@ -58,7 +57,7 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"message": fmt.Sprintf("Error creating workspace directory: %s", err)})
 		}
 
-		log.Printf("Created workspace directory: %s", dir)
+		fmt.Printf("Created workspace directory: %s", dir)
 
 		// Store the metadata on the database
 		// Return the response
