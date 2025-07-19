@@ -36,7 +36,7 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Workspace type must be public or personal!"})
 		}
 
-		// Use the Docker-mounted path to your Mac Desktop
+		// Use the Docker-mounted path to your Desktop
 		desktopPath := "/host-desktop/workspaces"
 
 		// Ensure the workspaces folder exists
