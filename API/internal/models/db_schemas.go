@@ -35,5 +35,6 @@ type Workspace struct {
 func GetAllModels() []interface{} {
 	return []interface{}{
 		&User{},
+		&Workspace{},
 	}
 }
