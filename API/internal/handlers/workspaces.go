@@ -26,7 +26,6 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		// Validate it
 		name := data["name"]
 		description := data["description"]
-		workspaceType := data["type"]
 
 		// Check if already exists
 		var existingWorkspace models.Workspace
@@ -40,7 +39,6 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		workspace := models.Workspace{
 			Name:        name,
 			Description: description,
-			Type:        workspaceType,
 			UserId: c.Get("user_id").(uint),
 		}
 
@@ -49,15 +47,10 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Error creating workspace"})
 		}
 
-		fmt.Printf("Creating workspace - Name: %s, Description: %s, Type: %s\n", name, description, workspaceType)
+		fmt.Printf("Creating workspace - Name: %s, Description: %s\n", name, description)
 
-		if name == "" || description == "" || workspaceType == "" {
+		if name == "" || description == "" {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Name, description and workspace type are required!"})
-		}
-
-		// Check if workspaceType is valid
-		if workspaceType != "public" && workspaceType != "personal" {
-			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Workspace type must be public or personal!"})
 		}
 
 		// Use the Docker-mounted path to your Desktop

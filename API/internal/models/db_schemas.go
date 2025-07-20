@@ -26,7 +26,6 @@ type Workspace struct {
 
 	Name        string  `json:"name" gorm:"not null"`
 	Description string  `json:"description"`
-	Type        string  `json:"type" gorm:"not null"` // e.g., "public", "personal"
 	Hashkey     *string `json:"hashkey" gorm:"unique;"`
 	UserId      uint    `json:"owner_id" gorm:"not null"`
 }
