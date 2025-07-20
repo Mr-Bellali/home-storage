@@ -30,10 +30,28 @@ type Workspace struct {
 	UserId      uint    `json:"owner_id" gorm:"not null"`
 }
 
+type File struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	Filename    string         `gorm:"not null" json:"filename"`
+	Filepath    string         `gorm:"not null" json:"filepath"` 
+	Size        int64          `json:"size"`                     
+	MIMEType    string         `json:"mime_type"`                
+	UserID      uint           `gorm:"not null" json:"user_id"`  
+	WorkspaceID uint           `gorm:"not null" json:"workspace_id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+
+	// Associations
+	User      User      `gorm:"foreignKey:UserID"`
+	Workspace Workspace `gorm:"foreignKey:WorkspaceID"`
+}
+
 // GetAllModels returns a slice of all model structs for migration
 func GetAllModels() []interface{} {
 	return []interface{}{
 		&User{},
 		&Workspace{},
+		&File{},
 	}
 }

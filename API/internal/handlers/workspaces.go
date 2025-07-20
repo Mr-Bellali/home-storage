@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,6 +13,7 @@ import (
 	"github.com/Mr-Bellali/home_storage/internal/models"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/color"
+	"gorm.io/gorm"
 )
 
 func SetupWorkspacesRoutes(g *echo.Group) {
@@ -39,7 +42,7 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		workspace := models.Workspace{
 			Name:        name,
 			Description: description,
-			UserId: c.Get("user_id").(uint),
+			UserId:      c.Get("user_id").(uint),
 		}
 
 		if err := models.DB.Create(&workspace).Error; err != nil {
@@ -79,9 +82,88 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		})
 	}, middlewares.AuthMiddleware())
 
+	// Route to upload a media to a workspace
+	g.POST("/workspaces/:id/upload", func(c echo.Context) error {
+		// Get the id param
+		workspaceId, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Currapted Id must be a valid number"})
+		}
+
+		// Retrive the user id from context
+		userId := c.Get("user_id").(uint)
+
+		// Get the workspace by its id and the user ID
+		var workspace models.Workspace
+		result := models.DB.Where("id = ? AND user_id = ?", workspaceId, userId).First(&workspace)
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return c.JSON(http.StatusNotFound, map[string]string{"message": "Workspace not found"})
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to retrieve workspace"})
+		}
+
+		// Read file from the reauest
+		file, err := c.FormFile("file")
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to read file"})
+
+		}
+		src, err := file.Open()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to open uploaded file"})
+		}
+		defer src.Close()
+
+		// Destination
+		workspaceDir := filepath.Join("/host-desktop/workspaces", workspace.Name)
+
+		// Making sure that the workspace folder still exists
+		err = os.MkdirAll(workspaceDir, os.ModePerm)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to ensure workspace directory exists"})
+		}
+
+		// Create destination file
+		dstPath := filepath.Join(workspaceDir, file.Filename)
+		dst, err := os.Create(dstPath)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create file on your workspace"})
+		}
+		defer dst.Close()
+
+		// Copy uploaded file to destination
+		size, err := io.Copy(dst, src)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to save file"})
+		}
+
+		// Detect MIME type
+		mimeType := file.Header.Get("Content-Type")
+
+		// Save metadata in database
+		fileRecord := models.File{
+			Filename:    file.Filename,
+			Filepath:    dstPath,
+			Size:        size,
+			MIMEType:    mimeType,
+			UserID:      userId,
+			WorkspaceID: workspace.ID,
+		}
+
+		if err := models.DB.Create(&fileRecord).Error; err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to save file metadata"})
+		}
+
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message": "File uploaded and metadata saved successfully",
+			"file":    fileRecord,
+		})
+	}, middlewares.AuthMiddleware())
+
 	g.GET("/workspaces/:id", func(c echo.Context) error {
-		// Get the id param 
-		workspaceId, err := strconv.Atoi(c.Param("id")) 
+		// Get the id param
+		workspaceId, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Currapted Id must be a valid number"})
 		}
@@ -90,6 +172,6 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		var workspace models.Workspace
 		models.DB.First(&workspace, workspaceId)
 
-		return c.JSON(http.StatusAccepted, map[string]string{"message":workspace.Name})
+		return c.JSON(http.StatusAccepted, map[string]string{"message": workspace.Name})
 	})
 }
