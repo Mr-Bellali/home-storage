@@ -82,6 +82,20 @@ func SetupWorkspacesRoutes(g *echo.Group) {
 		})
 	}, middlewares.AuthMiddleware())
 
+	// Route to get all personal workspaces
+	g.GET("/workspaces", func(c echo.Context) error {
+		// Retrive the user ID from context
+		userId := c.Get("user_id").(uint)
+
+		// Get all user's workspaces
+		var workspaces []models.Workspace
+		result := models.DB.Where("user_id = ?", userId).Find(&workspaces)
+		if result.Error != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message":"Unexpected error"})
+		}
+		return c.JSON(http.StatusAccepted, map[string]any{"worspaces":workspaces})
+	}, middlewares.AuthMiddleware())
+
 	// Route to upload a media to a workspace
 	g.POST("/workspaces/:id/upload", func(c echo.Context) error {
 		// Get the id param
